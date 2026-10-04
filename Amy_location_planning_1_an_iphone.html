@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Amy’location — Planning 1 an</title>
+<style>
+:root { --blue:#1769e0; --dark:#0d2445; --bg:#f3f6fa; --line:#dce3ec; --green:#2db86b; --orange:#f0a13a; --red:#e25252; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:#172033; }
+header { background:linear-gradient(135deg,#0b3f8e,#1769e0); color:white; padding:14px 10px; position:sticky; top:0; z-index:10; }
+.logo { text-align:center; font-size:24px; font-weight:900; }
+.sub { text-align:center; font-size:12px; opacity:.9; margin-top:3px; }
+.tools { display:flex; gap:7px; justify-content:center; flex-wrap:wrap; margin-top:11px; }
+button,select,input { font:inherit; }
+button { border:0; border-radius:10px; padding:10px 12px; font-weight:800; }
+.light { background:white; color:#1457b8; }
+.dark { background:#10213d; color:white; }
+main { padding:9px; max-width:1500px; margin:auto; }
+.card { background:white; border:1px solid var(--line); border-radius:15px; padding:11px; margin-bottom:11px; }
+.months { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.months button { background:#edf4ff; color:#1457b8; padding:9px 4px; font-size:12px; }
+.legend { display:flex; flex-wrap:wrap; gap:9px; font-size:12px; color:#667085; margin-top:9px; }
+.legend span::before { content:""; display:inline-block; width:12px; height:12px; border-radius:4px; margin-right:4px; vertical-align:-2px; }
+.free::before { background:var(--green); } .res::before { background:var(--orange); } .rent::before { background:var(--red); }
+.month { scroll-margin-top:125px; }
+.monthTitle { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.monthTitle h2 { margin:0; font-size:17px; } .stats { font-size:11px; color:#667085; margin-top:2px; }
+.scroller { overflow-x:auto; border:1px solid var(--line); border-radius:11px; -webkit-overflow-scrolling:touch; }
+table { border-collapse:separate; border-spacing:0; min-width:980px; }
+th,td { border-right:1px solid var(--line); border-bottom:1px solid var(--line); height:34px; }
+th { background:#eef2f7; font-size:10px; position:sticky; top:0; z-index:4; }
+.day { position:sticky; left:0; z-index:5; background:white; width:76px; min-width:76px; font-size:10px; text-align:left; padding:4px; white-space:nowrap; }
+.car { width:70px; min-width:70px; max-width:70px; line-height:1.05; }
+.cell { width:70px; min-width:70px; max-width:70px; text-align:center; cursor:pointer; }
+.cell.free { background:#e8f8ee; } .cell.res { background:#fff0d9; } .cell.rent { background:#ffe6e6; }
+.cell.today { box-shadow:inset 0 0 0 2px var(--blue); }
+.mark { font-weight:900; font-size:11px; } .client { display:block; font-size:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
+.modalBg { display:none; position:fixed; inset:0; z-index:50; background:#0008; align-items:flex-end; }
+.modal { background:white; width:100%; max-width:520px; margin:auto; border-radius:20px 20px 0 0; padding:17px; }
+.modal h3 { margin:0; } .modal p { margin:4px 0 12px; font-size:12px; color:#667085; }
+.states { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:9px; }
+.state { border:2px solid transparent; padding:12px 3px; } .state.active { border-color:#172033; }
+.sfree { background:#ddf4e6; color:#16733e; } .sres { background:#ffedcf; color:#9a5a00; } .srent { background:#ffdede; color:#a52020; }
+.modal input { width:100%; padding:12px; border:1px solid var(--line); border-radius:10px; margin-bottom:9px; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; } .danger { background:#ffe7e7; color:#b42323; }
+@media(max-width:600px) { .months { grid-template-columns:repeat(3,1fr); } .logo { font-size:22px; } }
+</style>
+</head>
+<body>
+<header>
+<div class="logo">🚘 Amy’location</div>
+<div class="sub">Planning annuel interactif — 13 véhicules</div>
+<div class="tools">
+<button class="light" onclick="today()">📅 Aujourd’hui</button>
+<select id="year"></select>
+<button class="light" onclick="window.print()">🖨️ Imprimer</button>
+</div>
+</header>
+<main>
+<section class="card">
+<strong>Vue annuelle</strong>
+<div style="font-size:11px;color:#667085;margin:4px 0 8px">Touchez une case pour modifier la disponibilité de la voiture.</div>
+<div class="months" id="monthsNav"></div>
+<div class="legend"><span class="free">Disponible</span><span class="res">Réservée</span><span class="rent">Louée</span></div>
+</section>
+<div id="content"></div>
+</main>
+
+<div class="modalBg" id="modalBg" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+<h3 id="carTitle"></h3><p id="dateTitle"></p>
+<div class="states">
+<button id="bfree" class="state sfree" onclick="setState('free')">🟢 Disponible</button>
+<button id="bres" class="state sres" onclick="setState('res')">🟠 Réservée</button>
+<button id="brent" class="state srent" onclick="setState('rent')">🔴 Louée</button>
+</div>
+<input id="client" placeholder="Nom du client (facultatif)">
+<div class="actions"><button class="danger" onclick="removeCell()">Supprimer</button><button class="dark" onclick="closeModal()">Fermer</button></div>
+</div>
+</div>
+
+<script>
+const CARS=['Fiat Tipo noire 1','Fiat Tipo noire 2','Fiat Tipo grise 1','Fiat Tipo grise 2','Peugeot 208 GT','Renault Kangoo 1','Renault Kangoo 2','Citroën Jumpy','Suzuki Ertiga','Suzuki Swift','Dacia Lodgy noire','Dacia Lodgy grise 1','Dacia Lodgy grise 2'];
+const MONTHS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const DAYS=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+const KEY="amyLocationPlanning1AnV2";
+let data=JSON.parse(localStorage.getItem(KEY)||"{}");
+let year=new Date().getFullYear(), current=null;
+
+function pad(n){return String(n).padStart(2,"0");}
+function k(m,d,c){return year+"-"+pad(m+1)+"-"+pad(d)+"|"+c;}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+function esc(s){return String(s||"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));}
+
+function render(){
+ document.getElementById("monthsNav").innerHTML=MONTHS.map((m,i)=>`<button onclick="document.getElementById('month-${i}').scrollIntoView({behavior:'smooth'})">${m}</button>`).join("");
+ let out="";
+ for(let m=0;m<12;m++){
+   const total=new Date(year,m+1,0).getDate();
+   let res=0,rent=0;
+   for(let d=1;d<=total;d++)for(let c=0;c<CARS.length;c++){let v=data[k(m,d,c)];if(v?.state==="res")res++;if(v?.state==="rent")rent++;}
+   out+=`<section class="card month" id="month-${m}"><div class="monthTitle"><div><h2>${MONTHS[m]} ${year}</h2><div class="stats">${res} réservations • ${rent} locations</div></div><button class="light" onclick="scrollTo(0,0)">↑</button></div><div class="scroller"><table><thead><tr><th class="day">Jour</th>`;
+   CARS.forEach((c,i)=>out+=`<th class="car">🚗 ${i+1}<br>${esc(c.slice(0,15))}</th>`);
+   out+="</tr></thead><tbody>";
+   for(let d=1;d<=total;d++){
+     const dt=new Date(year,m,d), isToday=dt.toDateString()===new Date().toDateString(), wd=dt.getDay();
+     out+=`<tr><td class="day">${DAYS[wd]} ${pad(d)}/${pad(m+1)}</td>`;
+     for(let c=0;c<CARS.length;c++){
+       const v=data[k(m,d,c)]||{state:"free",client:""};
+       const cl=v.state==="res"?"res":v.state==="rent"?"rent":"free";
+       const mark=v.state==="res"?"R":v.state==="rent"?"L":"✓";
+       out+=`<td class="cell ${cl} ${isToday?"today":""}" onclick="openModal('${k(m,d,c)}',${m},${d},${c})"><span class="mark">${mark}</span>${v.client?`<span class="client">${esc(v.client)}</span>`:""}</td>`;
+     }
+     out+="</tr>";
+   }
+   out+="</tbody></table></div></section>";
+ }
+ document.getElementById("content").innerHTML=out;
+}
+
+function openModal(key,m,d,c){
+ current={key,m,d,c};
+ const v=data[key]||{state:"free",client:""};
+ document.getElementById("carTitle").textContent=CARS[c];
+ document.getElementById("dateTitle").textContent=DAYS[new Date(year,m,d).getDay()]+" "+pad(d)+"/"+pad(m+1)+"/"+year;
+ document.getElementById("client").value=v.client||"";
+ ["free","res","rent"].forEach(s=>document.getElementById("b"+s).classList.toggle("active",v.state===s));
+ document.getElementById("modalBg").style.display="flex";
+}
+function setState(s){
+ data[current.key]={state:s,client:document.getElementById("client").value.trim()};
+ save();closeModal();render();
+}
+function removeCell(){delete data[current.key];save();closeModal();render();}
+function closeModal(){document.getElementById("modalBg").style.display="none";current=null;}
+function today(){
+ const d=new Date();year=d.getFullYear();document.getElementById("year").value=year;render();
+ setTimeout(()=>document.getElementById("month-"+d.getMonth()).scrollIntoView({behavior:"smooth"}),50);
+}
+const sel=document.getElementById("year");
+for(let y=new Date().getFullYear()-1;y<=new Date().getFullYear()+5;y++)sel.innerHTML+=`<option value="${y}">${y}</option>`;
+sel.value=year;sel.onchange=()=>{year=Number(sel.value);render();};
+render();
+</script>
+</body>
+</html>
