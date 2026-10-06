@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Amy’location</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--dark:#17202a;--gold:#c59b4a;--green:#2e9d63;--red:#d9534f;--blue:#3678d8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17202a}
+header{position:sticky;top:0;z-index:5;background:var(--dark);color:white;padding:14px 14px 10px;text-align:center;box-shadow:0 2px 8px #0002}
+.logo{font-size:27px;font-weight:800;color:#e8c77b}.sub{font-size:11px;opacity:.75}
+nav{display:flex;gap:6px;overflow:auto;margin-top:12px}nav button{border:0;border-radius:10px;padding:9px 12px;background:#ffffff18;color:#fff;white-space:nowrap}
+nav button.active{background:var(--gold);color:#111}
+main{padding:14px;max-width:1100px;margin:auto}.page{display:none}.page.active{display:block}
+h2{margin:8px 0 12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 9px #00000012}.vehicle{min-height:135px;display:flex;flex-direction:column;justify-content:space-between}
+.vehicle .emoji{font-size:42px}.vehicle strong{display:block}.muted{color:#68727c;font-size:13px}
+button,.btn{font:inherit;cursor:pointer}.primary{border:0;background:var(--dark);color:white;border-radius:11px;padding:10px 13px}.gold{background:var(--gold);color:#111}.danger{background:#fff0f0;color:#b52f2b}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.toolbar select,.toolbar input,input,select,textarea{font:inherit;padding:10px;border:1px solid #d7dce1;border-radius:10px;background:#fff}
+.tablewrap{overflow:auto;background:#fff;border-radius:14px;box-shadow:0 2px 9px #0001}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}th,td{border-right:1px solid #e2e5e8;border-bottom:1px solid #e2e5e8;padding:5px;text-align:center;font-size:11px;min-width:35px;height:34px}th{background:#eef1f4;position:sticky;top:0;z-index:2}.name{position:sticky;left:0;z-index:3;background:#fff;text-align:left;min-width:155px;font-weight:700}.day.available{background:#d9f4e5}.day.rented{background:#ffdede}.day.unavailable{background:#e5e7ea}.day:hover{outline:2px solid var(--blue)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin:8px 0 12px}.dot{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px}.g{background:#d9f4e5}.r{background:#ffdede}.x{background:#e5e7ea}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.form label{font-size:12px;font-weight:700}.form input,.form select,.form textarea{width:100%;margin-top:4px}.full{grid-column:1/-1}
+.detail{margin-top:12px}.contract{background:#fff;padding:18px;border-radius:14px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media print{header,nav,.no-print,.actions{display:none!important}body{background:#fff}.page{display:none!important}#contract{display:block!important}.contract{box-shadow:none;padding:0}main{padding:0}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">Amy’location</div><div class="sub">Gestion de location automobile</div>
+<nav>
+<button data-page="home" class="active">Accueil</button><button data-page="planning">Planning annuel</button><button data-page="vehicles">Véhicules</button><button data-page="contract">Contrat</button>
+</nav>
+</header>
+<main>
+<section id="home" class="page active">
+<h2>Ma flotte</h2><div id="fleet" class="grid"></div>
+</section>
+<section id="planning" class="page">
+<h2>Planning annuel</h2>
+<div class="toolbar"><label>Année <select id="year"></select></label><button class="primary" id="resetPlan">Réinitialiser l’année</button></div>
+<div class="legend"><span><i class="dot g"></i> Disponible</span><span><i class="dot r"></i> Loué</span><span><i class="dot x"></i> Indisponible</span></div>
+<div class="tablewrap"><table id="plan"></table></div>
+<p class="muted">Touchez une case pour changer : disponible → loué → indisponible.</p>
+</section>
+<section id="vehicles" class="page">
+<h2>Véhicules</h2><div id="vehicleList" class="grid"></div><div id="vehicleDetail" class="detail"></div>
+</section>
+<section id="contract" class="page">
+<div class="contract"><h2>Contrat de location</h2>
+<div class="form">
+<label>Client<input id="cClient"></label><label>Passeport<input id="cPassport"></label><label>Permis<input id="cPermit"></label>
+<label>Véhicule<select id="cVehicle"></select></label><label>Date départ<input id="cStart" type="date"></label><label>Date retour<input id="cEnd" type="date"></label>
+<label>Montant total (DA)<input id="cTotal" type="number"></label><label>Caution (DA)<input id="cDeposit" type="number"></label>
+<label>Énergie<select id="cEnergy"><option>Diesel</option><option>Essence</option></select></label>
+<label>État<select id="cState"><option>Propre</option><option>Sale</option></select></label>
+<label>Kilométrage départ<input id="cKm" type="number"></label>
+<label class="full">Observations<textarea id="cObs" rows="3"></textarea></label>
+<label class="full">Signature<input id="cSign"></label>
+</div><div class="actions no-print"><button class="primary" id="print">Imprimer / PDF</button><button class="primary gold" id="saveContract">Enregistrer</button></div>
+</div></section>
+</main>
+<script>
+const fleet=[
+["Dacia Lodgy","2023","Gris clair",2],["Dacia Lodgy","2022","Noir",1],
+["Renault Kangoo Stepway","2024","Gris clair",2],["Peugeot 208 GT","2022","Noir",1],
+["Suzuki Ertiga","2025","Gris clair",1],["Suzuki Swift","2022","Bronze",1],
+["Citroën Jumpy","2022","Gris clair",1],["Fiat Tipo","2023","Noir",2],["Fiat Tipo","2023","Gris clair",2]
+];
+let vehicles=[];fleet.forEach(([m,y,c,n])=>{for(let i=1;i<=n;i++)vehicles.push({id:m+"-"+y+"-"+c+"-"+i,name:m,year:y,color:c,num:i})});
+let state=JSON.parse(localStorage.getItem("amyState")||"{}");
+function save(){localStorage.setItem("amyState",JSON.stringify(state))}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function renderFleet(){fleetEl.innerHTML=vehicles.map(v=>`<div class="card vehicle"><div class="emoji">🚗</div><div><strong>${esc(v.name)}</strong><span class="muted">${v.year} · ${v.color} · n°${v.num}</span></div><button class="primary" onclick="openVehicle('${esc(v.id)}')">Gérer</button></div>`).join("")}
+function openVehicle(id){document.querySelector('[data-page="vehicles"]').click();let v=vehicles.find(x=>x.id===id),s=state[id]||{};vehicleDetail.innerHTML=`<div class="card"><h3>${esc(v.name)} ${v.year} — ${v.color}</h3><div class="form"><label>Vidange<input id="oil" value="${esc(s.oil)}" placeholder="Date / km"></label><label>Contrôle technique<input id="ct" value="${esc(s.ct)}" placeholder="Date"></label><label>Prochaine vidange<input id="nextOil" value="${esc(s.nextOil)}"></label><label class="full">Notes<textarea id="notes">${esc(s.notes)}</textarea></label></div><div class="actions"><button class="primary" onclick="saveVehicle('${esc(id)}')">Enregistrer</button><button class="primary gold" onclick="makeContract('${esc(id)}')">Contrat</button></div></div>`}
+function saveVehicle(id){state[id]={oil:oil.value,ct:ct.value,nextOil:nextOil.value,notes:notes.value};save();alert("Enregistré");}
+function renderVehicles(){vehicleList.innerHTML=vehicles.map(v=>`<div class="card"><strong>${esc(v.name)}</strong><div class="muted">${v.year} · ${v.color} · n°${v.num}</div><button class="primary" onclick="openVehicle('${esc(v.id)}')">Suivi véhicule</button></div>`).join("")}
+function fillContract(){cVehicle.innerHTML=vehicles.map(v=>`<option value="${esc(v.id)}">${esc(v.name)} ${v.year} ${esc(v.color)} n°${v.num}</option>`).join("")}
+function makeContract(id){document.querySelector('[data-page="contract"]').click();cVehicle.value=id}
+function daysInYear(y){return new Date(y,1,29).getMonth()===1?366:365}
+function renderPlan(){let y=+year.value, rows=["<thead><tr><th class=name>Véhicule / jour</th>"];let d=new Date(y,0,1);for(let i=0;i<daysInYear(y);i++){let x=new Date(y,0,1+i);rows.push(`<th>${String(x.getDate()).padStart(2,"0")}/${String(x.getMonth()+1).padStart(2,"0")}</th>`)}rows.push("</tr></thead><tbody>");vehicles.forEach(v=>{rows.push(`<tr><td class=name>${esc(v.name)} ${v.year} n°${v.num}</td>`);for(let i=0;i<daysInYear(y);i++){let key=v.id+"|"+y+"|"+i,st=state[key]||"available";rows.push(`<td class="day ${st}" data-key="${esc(key)}">${st==="rented"?"L":st==="unavailable"?"X":"✓"}</td>`)}rows.push("</tr>")});rows.push("</tbody>");plan.innerHTML=rows.join("");document.querySelectorAll(".day").forEach(td=>td.onclick=()=>{let k=td.dataset.key,st=state[k]||"available";state[k]=st==="available"?"rented":st==="rented"?"unavailable":"available";save();renderPlan()})}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(b.dataset.page).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");if(b.dataset.page==="planning")renderPlan()});
+let fleetEl=document.getElementById("fleet"),vehicleList=document.getElementById("vehicleList"),vehicleDetail=document.getElementById("vehicleDetail"),plan=document.getElementById("plan"),year=document.getElementById("year");
+for(let y=new Date().getFullYear()-1;y<=new Date().getFullYear()+3;y++)year.innerHTML+=`<option>${y}</option>`;year.value=new Date().getFullYear();year.onchange=renderPlan;
+resetPlan.onclick=()=>{Object.keys(state).filter(k=>k.includes("|"+year.value+"|")).forEach(k=>delete state[k]);save();renderPlan()};
+print.onclick=()=>window.print();saveContract.onclick=()=>{localStorage.setItem("amyLastContract",JSON.stringify([...document.querySelectorAll("#contract input,#contract select,#contract textarea")].reduce((o,e)=>(o[e.id]=e.value,o),{})));alert("Contrat enregistré sur cet iPhone")};
+renderFleet();renderVehicles();fillContract();
+</script>
+</body></html>
