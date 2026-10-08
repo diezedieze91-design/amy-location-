@@ -1,0 +1,30 @@
+<!doctype html><html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Planning Amy’location">
+<title>Planning Amy’location</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#17202a}
+header{background:#111827;color:#fff;padding:16px 12px;position:sticky;top:0;z-index:5}h1{font-size:23px;margin:0 0 3px}.sub{font-size:12px;opacity:.75}
+.controls{display:flex;gap:7px;margin-top:12px}.controls button,.controls select{height:44px;border:0;border-radius:10px;font-size:16px}.controls button{width:46px;background:#fff;font-weight:800}.controls select{flex:1;padding:0 10px}
+main{padding:10px;max-width:1000px;margin:auto}.legend{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 10px}.legend span{background:#fff;border:1px solid #ddd;border-radius:9px;padding:7px 9px;font-size:12px}.dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.av{background:#cfeedd}.lo{background:#ffd2d2}.un{background:#e1e4e8}
+.calendar{background:#fff;border:1px solid #d5d9de;border-radius:12px;overflow:auto}.title{font-size:20px;font-weight:800;padding:13px 10px}
+.grid{display:grid;grid-template-columns:145px repeat(7,50px);min-width:495px}.head{background:#eef1f4;font-weight:800;font-size:11px;text-align:center;padding:9px 2px;border-bottom:1px solid #d5d9de}
+.car{padding:9px 7px;font-weight:800;font-size:12px;border-bottom:1px solid #e1e4e8;border-right:1px solid #d5d9de;position:sticky;left:0;background:#fff;z-index:2}.car small{display:block;color:#687383;font-weight:500;margin-top:3px}
+.cell{min-height:58px;border-bottom:1px solid #e1e4e8;border-right:1px solid #e1e4e8;padding:4px;cursor:pointer}.cell .num{font-weight:800;font-size:11px}.cell .state{font-size:9px;font-weight:700;margin-top:5px}.available{background:#cfeedd}.rented{background:#ffd2d2}.unavailable{background:#e1e4e8}
+.info{margin-top:10px;background:#fff;border:1px solid #ddd;border-radius:11px;padding:11px;font-size:12px}
+</style></head><body>
+<header><h1>📅 Planning Amy’location</h1><div class="sub">Planning unique · grand et lisible</div>
+<div class="controls"><button id="prev">‹</button><select id="month"></select><button id="next">›</button></div></header>
+<main><div class="legend"><span><i class="dot av"></i>Disponible</span><span><i class="dot lo"></i>Loué</span><span><i class="dot un"></i>Indisponible</span></div>
+<div id="calendar" class="calendar"></div><div class="info"><b>Touchez une case</b> pour changer : Disponible → Loué → Indisponible. Les changements restent enregistrés sur l’iPhone.</div></main>
+<script>
+const cars=[["Dacia Lodgy","2023 · Gris clair ×2"],["Dacia Lodgy","2022 · Noir ×1"],["Renault Kangoo Stepway","2024 · Gris clair ×2"],["Peugeot 208 GT","2022 · Noir ×1"],["Suzuki Ertiga","2025 · Gris clair ×1"],["Suzuki Swift","2022 · Bronze ×1"],["Citroën Jumpy","2022 · Gris clair ×1"],["Fiat Tipo","2023 · Noir ×2"],["Fiat Tipo","2023 · Gris clair ×2"]];
+const days=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];let data=JSON.parse(localStorage.getItem("amyPlanningUnique")||"{}");let now=new Date(),Y=now.getFullYear(),M=now.getMonth();
+const sel=document.getElementById("month");
+function fill(){sel.innerHTML="";for(let m=0;m<12;m++)sel.innerHTML+=`<option value="${m}">${new Date(Y,m,1).toLocaleDateString("fr-FR",{month:"long"})} ${Y}</option>`;sel.value=M}
+function k(c,d){return c+"|"+Y+"|"+M+"|"+d}
+function render(){let first=new Date(Y,M,1),last=new Date(Y,M+1,0),off=(first.getDay()+6)%7,s=`<div class="title">${first.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</div><div class="grid"><div class="head">VÉHICULE</div>${days.map(x=>`<div class="head">${x}</div>`).join("")}`;
+cars.forEach((c,ci)=>{s+=`<div class="car">${c[0]}<small>${c[1]}</small></div>`;for(let i=0;i<off;i++)s+=`<div class="cell"></div>`;for(let day=1;day<=last.getDate();day++){let st=data[k(ci,day)]||"available",txt=st==="available"?"Disponible":st==="rented"?"Loué":"Indisponible";s+=`<div class="cell ${st}" data-k="${k(ci,day)}"><div class="num">${day}</div><div class="state">${txt}</div></div>`;if((off+day)%7===0&&day<last.getDate()){} }let used=(off+last.getDate())%7;if(used)for(let i=used;i<7;i++)s+=`<div class="cell"></div>`});s+="</div>";document.getElementById("calendar").innerHTML=s;document.querySelectorAll("[data-k]").forEach(e=>e.onclick=()=>{let q=data[e.dataset.k]||"available";data[e.dataset.k]=q==="available"?"rented":q==="rented"?"unavailable":"available";localStorage.setItem("amyPlanningUnique",JSON.stringify(data));render()})}
+document.getElementById("prev").onclick=()=>{M--;if(M<0){M=11;Y--}fill();render()};document.getElementById("next").onclick=()=>{M++;if(M>11){M=0;Y++}fill();render()};sel.onchange=()=>{M=+sel.value;render()};fill();render();
+</script></body></html>
