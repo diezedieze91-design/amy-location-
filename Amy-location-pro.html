@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#073b78">
+<title>Amy’location Pro</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5fa;color:#17243a}
+header{background:linear-gradient(135deg,#06336b,#087be5);color:white;padding:22px 16px}
+header h1{margin:0;font-size:27px}
+header p{margin:7px 0 0}
+nav{display:flex;gap:8px;overflow:auto;padding:12px;background:white;position:sticky;top:0;z-index:2}
+button{border:0;border-radius:9px;padding:11px 14px;background:#075fbd;color:white;font-weight:bold;cursor:pointer}
+nav button{white-space:nowrap;background:#e7effa;color:#174675}
+nav button.active{background:#075fbd;color:white}
+main{padding:14px;max-width:1100px;margin:auto}
+h2{font-size:21px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat,.card{background:white;border-radius:13px;padding:14px;box-shadow:0 2px 8px #102b5010;margin-bottom:12px}
+.stat strong{display:block;font-size:25px;color:#075fbd}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.car{background:white;border-radius:13px;padding:13px;border:1px solid #e0e7f0;cursor:pointer}
+.car .emoji{font-size:36px}
+.car h3{font-size:15px;margin:7px 0}
+small{color:#627187}
+.badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:12px;background:#dcfce7;color:#166534}
+.badge.loue{background:#fee2e2;color:#991b1b}
+.badge.maintenance{background:#fef3c7;color:#92400e}
+input,select,textarea{width:100%;padding:11px;margin:6px 0 12px;border:1px solid #cbd5e1;border-radius:8px;background:white;font:inherit}
+label{font-size:13px;font-weight:bold}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+table{width:100%;border-collapse:collapse;background:white;font-size:13px}
+th,td{padding:9px;border:1px solid #dce4ef;text-align:left}
+.tablewrap{overflow-x:auto}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.secondary{background:#e5edf7;color:#174675}
+.danger{background:#b91c1c}
+.hidden{display:none!important}
+footer{text-align:center;color:#64748b;padding:20px;font-size:12px}
+@media(max-width:420px){.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:9px}.stat strong{font-size:21px}.stat span{font-size:11px}}
+@media print{nav,.actions,header,footer,.no-print{display:none!important}body{background:white}main{padding:0}.card{box-shadow:none}}
+</style>
+</head>
+<body>
+<header>
+<h1>🚘 Amy’location Pro</h1>
+<p>Gestion de flotte • Locations • Entretien</p>
+</header>
+<nav>
+<button class="active" onclick="show('home',this)">Accueil</button>
+<button onclick="show('planning',this)">Planning</button>
+<button onclick="show('rentals',this)">Locations</button>
+<button onclick="show('maintenance',this)">Entretien</button>
+<button onclick="show('clients',this)">Clients</button>
+</nav>
+<main>
+<section id="home">
+<h2>Tableau de bord</h2>
+<div class="stats">
+<div class="stat"><strong id="total">13</strong><span>Véhicules</span></div>
+<div class="stat"><strong id="available">13</strong><span>Disponibles</span></div>
+<div class="stat"><strong id="rented">0</strong><span>Loués</span></div>
+</div>
+<div class="actions">
+<button onclick="newRental()">＋ Nouvelle location</button>
+<button onclick="show('planning')">Voir le planning</button>
+</div>
+<h2>Ma flotte</h2>
+<div id="fleet" class="grid"></div>
+</section>
+
+<section id="planning" class="hidden">
+<h2>Planning des locations</h2>
+<div class="card">
+<label>Mois à afficher</label><input id="month" type="month" onchange="renderPlanning()">
+<p><span class="badge">Disponible</span> <span class="badge loue">Loué</span></p>
+<div class="tablewrap"><table id="planTable"></table></div>
+</div>
+<p><small>Le planning utilise les dates de début et de fin des locations enregistrées.</small></p>
+</section>
+
+<section id="rentals" class="hidden">
+<h2>Nouvelle location</h2>
+<div class="card">
+<form id="rentalForm">
+<div class="formgrid">
+<div><label>Véhicule</label><select id="rCar" required></select></div>
+<div><label>Nom du client</label><input id="rClient" required></div>
+<div><label>Téléphone</label><input id="rPhone" type="tel"></div>
+<div><label>Passeport / pièce d'identité</label><input id="rPassport"></div>
+<div><label>Numéro de permis</label><input id="rPermit"></div>
+<div><label>Date de départ</label><input id="rStart" type="date" required></div>
+<div><label>Date de retour</label><input id="rEnd" type="date" required></div>
+<div><label>Montant total</label><input id="rPrice" type="number" min="0" required></div>
+<div><label>Caution</label><input id="rDeposit" type="number" min="0"></div>
+</div>
+<button type="submit">Enregistrer la location</button>
+</form>
+</div>
+<h2>Locations enregistrées</h2>
+<div id="rentalList"></div>
+</section>
+
+<section id="maintenance" class="hidden">
+<h2>Suivi des véhicules</h2>
+<div class="card">
+<label>Véhicule</label><select id="mCar"></select>
+<div class="formgrid">
+<div><label>Prochaine vidange (km)</label><input id="mOil" type="number"></div>
+<div><label>Fin d'assurance</label><input id="mInsurance" type="date"></div>
+<div><label>Contrôle technique</label><input id="mInspection" type="date"></div>
+<div><label>Kilométrage actuel</label><input id="mKm" type="number"></div>
+<div><label>État</label><select id="mStatus"><option>Disponible</option><option>Indisponible</option><option>Maintenance</option></select></div>
+</div>
+<label>Notes d'entretien</label><textarea id="mNotes" rows="3"></textarea>
+<button onclick="saveMaintenance()">Enregistrer le suivi</button>
+</div>
+<div id="maintenanceList"></div>
+</section>
+
+<section id="clients" class="hidden">
+<h2>Clients enregistrés</h2>
+<p><small>Les clients sont ajoutés automatiquement lors de l'enregistrement d'une location.</small></p>
+<div id="clientList"></div>
+</section>
+
+<section id="vehicle" class="hidden">
+<div class="actions"><button class="secondary" onclick="show('home')">← Retour à la flotte</button></div>
+<div id="vehicleDetail"></div>
+</section>
+
+<section id="contract" class="hidden">
+<div class="actions no-print">
+<button onclick="window.print()">Imprimer / PDF</button>
+<button class="secondary" onclick="show('rentals')">Retour</button>
+</div>
+<div id="contractContent"></div>
+</section>
+</main>
+<footer>Amy’location Pro • Données enregistrées sur cet appareil</footer>
+
+<script>
+const cars=[
+["Dacia Lodgy 2023 gris clair","Dacia Lodgy 2023 gris clair",2],
+["Dacia Lodgy 2022 noir","Dacia Lodgy 2022 noir",1],
+["Renault Kangoo Stepway 2024 gris clair","Renault Kangoo Stepway 2024 gris clair",2],
+["Peugeot 208 GT 2022 noir","Peugeot 208 GT 2022 noir",1],
+["Suzuki Ertiga gris clair","Suzuki Ertiga gris clair",1],
+["Suzuki Swift bronze","Suzuki Swift bronze",1],
+["Citroën Jumpy 2022 gris clair","Citroën Jumpy 2022 gris clair",1],
+["Fiat Tipo automatique 2023 noir","Fiat Tipo automatique 2023 noir",2],
+["Fiat Tipo 2023 gris clair","Fiat Tipo 2023 gris clair",2]
+];
+let fleet=[],rentals=[],maintenance={},clients=[];
+try{
+fleet=JSON.parse(localStorage.getItem('amyFleet'))||[];
+rentals=JSON.parse(localStorage.getItem('amyRentals'))||[];
+maintenance=JSON.parse(localStorage.getItem('amyMaintenance'))||{};
+clients=JSON.parse(localStorage.getItem('amyClients'))||[];
+}catch(e){}
+if(!fleet.length){
+cars.forEach(c=>{for(let i=1;i<=c[2];i++)fleet.push({
+id:fleet.length+1,name:c[0],registration:'',status:'Disponible'
+})});
+}
+function persist(){
+localStorage.setItem('amyFleet',JSON.stringify(fleet));
+localStorage.setItem('amyRentals',JSON.stringify(rentals));
+localStorage.setItem('amyMaintenance',JSON.stringify(maintenance));
+localStorage.setItem('amyClients',JSON.stringify(clients));
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function show(id,btn){
+document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+if(btn)btn.classList.add('active');
+if(id==='home')renderFleet();
+if(id==='planning')renderPlanning();
+if(id==='rentals'){renderRentalSelect();renderRentals()}
+if(id==='maintenance')renderMaintenance();
+if(id==='clients')renderClients();
+}
+function isRented(carId,date=new Date().toISOString().slice(0,10)){
+return rentals.some(r=>r.carId==carId&&r.start<=date&&r.end>=date)
+}
+function renderFleet(){
+document.getElementById('total').textContent=fleet.length;
+document.getElementById('rented').textContent=fleet.filter(c=>isRented(c.id)).length;
+document.getElementById('available').textContent=fleet.filter(c=>!isRented(c.id)&&c.status==='Disponible').length;
+document.getElementById('fleet').innerHTML=fleet.map(c=>{
+let rented=isRented(c.id);
+return `<div class="car" onclick="vehicle(${c.id})"><div class="emoji">🚘</div>
+<h3>${esc(c.name)}</h3><small>${c.registration?'Immat. '+esc(c.registration):'Immatriculation à compléter'}</small><p><span class="badge ${rented?'loue':c.status!=='Disponible'?'maintenance':''}">${rented?'Loué':esc(c.status)}</span></p></div>`
+}).join('');
+}
+function fillSelect(el,selected){
+el.innerHTML=fleet.map(c=>`<option value="${c.id}" ${c.id==selected?'selected':''}>${esc(c.name)} #${c.id}</option>`).join('');
+}
+function renderRentalSelect(){
+fillSelect(document.getElementById('rCar'));
+fillSelect(document.getElementById('mCar'));
+}
+function newRental(){
+show('rentals');
+document.getElementById('rentalForm').reset();
+renderRentalSelect();
+}
+document.getElementById('rentalForm').addEventListener('submit',e=>{
+e.preventDefault();
+let carId=+document.getElementById('rCar').value;
+let start=document.getElementById('rStart').value,end=document.getElementById('rEnd').value;
+if(end<start){alert('La date de retour doit être après la date de départ.');return}
+if(rentals.some(r=>r.carId===carId&&start<=r.end&&end>=r.start)){
+if(!confirm('Attention : une location chevauche déjà ces dates. Enregistrer quand même ?'))return;
+}
+let r={id:Date.now(),carId,client:document.getElementById('rClient').value.trim(),phone:document.getElementById('rPhone').value,passport:document.getElementById('rPassport').value,permit:document.getElementById('rPermit').value,start,end,price:document.getElementById('rPrice').value,deposit:document.getElementById('rDeposit').value};
+rentals.push(r);
+if(!clients.some(c=>c.name.toLowerCase()===r.client.toLowerCase()))clients.push({name:r.client,phone:r.phone,passport:r.passport,permit:r.permit});
+persist();e.target.reset();renderRentalSelect();renderRentals();renderFleet();
+alert('Location enregistrée.');
+});
+function renderRentals(){
+document.getElementById('rentalList').innerHTML=rentals.length?rentals.slice().reverse().map(r=>{
+let c=fleet.find(x=>x.id===r.carId);
+return `<div class="card"><b>${esc(r.client)}</b><p>${esc(c?.name||'Véhicule')}<br>${r.start} → ${r.end}<br>Montant : ${esc(r.price)}<br>Caution : ${esc(r.deposit||'0')}</p><div class="actions"><button onclick="contract(${r.id})">Générer le contrat</button><button class="danger" onclick="deleteRental(${r.id})">Supprimer</button></div></div>`
+}).join(''):'<p>Aucune location enregistrée.</p>';
+}
+function deleteRental(id){
+if(confirm('Supprimer cette location ?')){rentals=rentals.filter(r=>r.id!==id);persist();renderRentals();renderFleet()}
+}
+function renderPlanning(){
+let month=document.getElementById('month');
+if(!month.value)month.value=new Date().toISOString().slice(0,7);
+let [y,m]=month.value.split('-').map(Number),days=new Date(y,m,0).getDate();
+let html='<tr><th>Véhicule</th>';
+for(let d=1;d<=days;d++)html+=`<th>${String(d).padStart(2,'0')}</th>`;
+html+='</tr>';
+fleet.forEach(c=>{
+html+=`<tr><td>${esc(c.name)} #${c.id}</td>`;
+for(let d=1;d<=days;d++){
+let date=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+let rented=isRented(c.id,date);
+html+=`<td style="background:${rented?'#fecaca':'#dcfce7'};min-width:25px">${rented?'L':'D'}</td>`;
+}
+html+='</tr>';
+});
+document.getElementById('planTable').innerHTML=html;
+}
+function saveMaintenance(){
+let id=+document.getElementById('mCar').value;
+maintenance[id]={oil:document.getElementById('mOil').value,insurance:document.getElementById('mInsurance').value,inspection:document.getElementById('mInspection').value,km:document.getElementById('mKm').value,status:document.getElementById('mStatus').value,notes:document.getElementById('mNotes').value};
+let c=fleet.find(x=>x.id===id);c.status=maintenance[id].status;
+persist();renderMaintenance();renderFleet();alert('Suivi enregistré.');
+}
+function renderMaintenance(){
+renderRentalSelect();
+document.getElementById('maintenanceList').innerHTML=fleet.map(c=>{
+let m=maintenance[c.id]||{};
+return `<div class="card"><b>${esc(c.name)} #${c.id}</b><p>Km : ${esc(m.km||'—')}<br>Vidange : ${esc(m.oil||'—')} km<br>Assurance : ${esc(m.insurance||'—')}<br>Contrôle technique : ${esc(m.inspection||'—')}<br>État : ${esc(m.status||c.status)}<br>${esc(m.notes||'')}</p><button class="secondary" onclick="editMaintenance(${c.id})">Modifier</button></div>`
+}).join('');
+}
+function editMaintenance(id){
+let m=maintenance[id]||{};
+document.getElementById('mCar').value=id;
+['Oil','Insurance','Inspection','Km','Notes'].forEach(k=>{
+let key={Oil:'oil',Insurance:'insurance',Inspection:'inspection',Km:'km',Notes:'notes'}[k];
+document.getElementById('m'+k).value=m[key]||''
+});
+document.getElementById('mStatus').value=m.status||fleet.find(c=>c.id===id).status;
+window.scrollTo(0,0);
+}
+function renderClients(){
+document.getElementById('clientList').innerHTML=clients.length?clients.map(c=>`<div class="card"><b>${esc(c.name)}</b><p>Téléphone : ${esc(c.phone||'—')}<br>Pièce : ${esc(c.passport||'—')}<br>Permis : ${esc(c.permit||'—')}</p></div>`).join(''):'<p>Aucun client enregistré.</p>';
+}
+function vehicle(id){
+let c=fleet.find(x=>x.id===id),m=maintenance[id]||{};
+document.getElementById('vehicleDetail').innerHTML=`<div class="card"><h2>🚘 ${esc(c.name)} #${c.id}</h2>
+<label>Immatriculation</label><input id="vReg" value="${esc(c.registration)}">
+<label>État</label><select id="vStatus"><option ${c.status==='Disponible'?'selected':''}>Disponible</option><option ${c.status==='Indisponible'?'selected':''}>Indisponible</option><option ${c.status==='Maintenance'?'selected':''}>Maintenance</option></select>
+<p>État de location aujourd'hui : <b>${isRented(id)?'Loué':'Pas de location en cours'}</b></p>
+<p>Prochaine vidange : ${esc(m.oil||'Non renseignée')} km</p>
+<p>Assurance : ${esc(m.insurance||'Non renseignée')}</p>
+<p>Contrôle technique : ${esc(m.inspection||'Non renseigné')}</p>
+<div class="actions"><button onclick="saveVehicle(${id})">Enregistrer</button><button class="secondary" onclick="editMaintenance(${id});show('maintenance')">Suivi entretien</button></div></div>`;
+show('vehicle');
+}
+function saveVehicle(id){
+let c=fleet.find(x=>x.id===id);
+c.registration=document.getElementById('vReg').value;
+c.status=document.getElementById('vStatus').value;
+persist();renderFleet();alert('Véhicule enregistré.');
+}
+function contract(id){
+let r=rentals.find(x=>x.id===id),c=fleet.find(x=>x.id===r.carId);
+document.getElementById('contractContent').innerHTML=`<h1 style="text-align:center">Amy’location</h1><h2 style="text-align:center">CONTRAT DE LOCATION DE VÉHICULE</h2>
+<p>Date du contrat : ${new Date().toLocaleDateString('fr-FR')}</p><hr>
+<h3>1. Société</h3><p>Amy’location<br>Coordonnées de la société : à compléter.</p>
+<h3>2. Locataire</h3><p>Nom : ${esc(r.client)}<br>Téléphone : ${esc(r.phone||'—')}<br>Passeport / pièce : ${esc(r.passport||'—')}<br>Permis de conduire : ${esc(r.permit||'—')}</p>
+<h3>3. Véhicule</h3><p>Modèle : ${esc(c.name)}<br>Immatriculation : ${esc(c.registration||'À compléter')}</p>
+<h3>4. Durée de location</h3><p>Départ : ${esc(r.start)}<br>Retour prévu : ${esc(r.end)}</p>
+<h3>5. Conditions financières</h3><p>Montant total : ${esc(r.price)}<br>Caution : ${esc(r.deposit||'0')}</p>
+<p>Le locataire reconnaît avoir pris connaissance des conditions de location et s'engage à restituer le véhicule à la date prévue, dans l'état où il lui a été remis, sous réserve de l'usure normale.</p>
+<p>État du véhicule au départ : ☐ Propre ☐ Sale<br>Carburant : ☐ Diesel ☐ Essence</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:55px"><div>Signature du locataire :<br><br><br>___________________</div><div>Signature Amy’location :<br><br><br>___________________</div></div>
+<p style="margin-top:30px;font-size:11px">Document à vérifier et compléter avec les conditions légales applicables avant signature.</p>`;
+show('contract');
+}
+renderFleet();
+renderRentalSelect();
+</script>
+</body>
+</html>
